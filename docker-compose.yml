@@ -1,0 +1,45 @@
+# Generated automatically by openmrs SDK
+version: '2'
+
+services:
+  openmrs-db:
+    image: mysql:5.6
+    container_name: openmrs_mysql
+    command: "mysqld --character-set-server=utf8 --collation-server=utf8_general_ci"
+    environment:
+      MYSQL_DATABASE: openmrs
+      MYSQL_ROOT_PASSWORD: Admin123
+      MYSQL_USER: openmrs
+      MYSQL_PASSWORD: Admin123
+    ports:
+      - "${OPENMRS_MYSQL_PORT}:3306"
+    volumes:
+      - ./openmrs_dbdump:/docker-entrypoint-initdb.d
+      - db-data:/var/lib/mysql
+
+  openmrs-web:
+    build: openmrs
+    image: openmrs-imis:0.1
+    container_name: openmrs_web
+    depends_on:
+      - openmrs-db
+    environment:
+      DB_DATABASE: openmrs
+      DB_HOST: openmrs-db
+      DB_USERNAME: openmrs
+      DB_PASSWORD: Admin123
+      DB_CREATE_TABLES: 'false'  # change to 'true' if using an empty database
+      DB_AUTO_UPDATE: 'false'    # change to 'true' if using an empty database
+      MODULE_WEB_ADMIN: 'true'   # allow web admin on OpenMRS
+      DEBUG: 'true'
+    ports:
+      - "${OPENMRS_TOMCAT_PORT}:8080"
+      - "${OPENMRS_TOMCAT_DEBUG_PORT}:1044"
+    volumes:
+      - web-data:/usr/local/tomcat/.OpenMRS
+      - ./openmrs_modules:/usr/local/tomcat/.OpenMRS/modules/ # used to mount persistent docker volume for modules
+      - /usr/local/tomcat/.OpenMRS/owa/     # used to mount persistent docker volume for owa
+
+volumes:
+  db-data:
+  web-data:
